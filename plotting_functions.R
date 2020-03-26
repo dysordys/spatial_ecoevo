@@ -1,11 +1,5 @@
-
 require(tidyverse) ## for efficient data manipulation and plotting
 theme_set(theme_bw()) ## set base ggplot2 theme
-
-## a colorblind-friendly color palette:
-cpal <- c("#999999","#E69F00","#56B4E9","#009E73","#0072B2","#CC79A7","#D55E00")
-## and a color gradient from cold to warm colors based on them:
-color_pal <- colorRampPalette(c(cpal[3], cpal[4], cpal[2]))
 
 
 ## plot the distribution of local species richnesses over time, for each
@@ -37,12 +31,12 @@ plot_diversity <- function(dat, level="resource") {
     summarise(mH=mean(meanH), sH=sd(meanH)) %>%
     ggplot() + ## start plotting
     ## points for the mean richness at each point in time:
-    geom_point(aes(x=time,y=mH), colour=cpal[5], shape=19, size=1, alpha=0.7) +
+    geom_point(aes(x=time,y=mH), colour="#0072B2", shape=19, size=1, alpha=0.7) +
     ## connect them by a light dashed line (for visual aid):
-    geom_line(aes(x=time,y=mH), colour=cpal[5], linetype="dashed", alpha=0.5) +
+    geom_line(aes(x=time,y=mH), colour="#0072B2", linetype="dashed", alpha=0.5) +
     ## show plus/minus 1-sigma region around the mean:
     geom_ribbon(aes(x=time, ymin=mH-sH, ymax=mH+sH),
-                colour=NA, fill=cpal[5], alpha=0.3) +
+                colour=NA, fill="#0072B2", alpha=0.3) +
     ## vertical dotted line to show where climate change ends in time:
     geom_vline(xintercept=1300, linetype="dotted") +
     scale_x_continuous(name="time", breaks=c(1000, 2000, 3000)) +
@@ -117,8 +111,8 @@ plot_jaccard <- function(dat, level="resource") {
     scale_x_continuous(name="time", breaks=c(1000, 2000, 3000)) +
     scale_y_continuous(name="Jaccard distance", limits=c(0, 1),
                        labels=scales::percent) +
-    scale_colour_manual(values=c(cpal[3], cpal[4], cpal[2]), name="") +
-    scale_fill_manual(values=c(cpal[3], cpal[4], cpal[2]), name="") +
+    scale_colour_manual(values=c("#56B4E9", "#009E73", "#E69F00"), name="") +
+    scale_fill_manual(values=c("#56B4E9", "#009E73", "#E69F00"), name="") +
     facet_grid(parameterization~model) +
     theme(legend.position="bottom")
   return(p)
@@ -167,8 +161,8 @@ plot_range <- function(dat, level="resource") {
                 colour=NA, alpha=0.2) +
     scale_y_continuous(name="range breadth", labels=scales::percent) +
     facet_grid(parameterization~model) +
-    scale_colour_manual(values=c(cpal[3], cpal[4], cpal[2]), name="time") +
-    scale_fill_manual(values=c(cpal[3], cpal[4], cpal[2]), name="time") +
+    scale_colour_manual(values=c("#56B4E9", "#009E73", "#E69F00"), name="time") +
+    scale_fill_manual(values=c("#56B4E9", "#009E73", "#E69F00"), name="time") +
     theme(legend.position="bottom")
   return(p)
 }
@@ -256,7 +250,7 @@ plot_richness <- function(dat, level="resource") {
     scale_x_continuous(name="time", breaks=c(1000, 2000, 3000)) +
     scale_y_continuous(name="% change in species richness",
                        labels=scales::percent) +
-    scale_colour_manual(values=c("black", cpal[3], cpal[4], cpal[2]),
+    scale_colour_manual(values=c("black", "#56B4E9", "#009E73", "#E69F00"),
                         name="") +
     facet_grid(parameterization~model) +
     theme(legend.position="bottom")
@@ -270,11 +264,15 @@ plot_richness <- function(dat, level="resource") {
 ## Output
 ## - a ggplot2 figure
 plot_timeseries <- function(dat) {
+  ## define color gradient from cold to warm colors:
+  color_pal <- colorRampPalette(c("#56B4E9", "#009E73", "#E69F00"))
+  S <- dat %>% filter(tl=="R") %>% pull(species) %>% max ## no. of resource species
   p <- dat %>%
     ## calculate mean densities at each time and patch for each species:
     group_by(time, species, patch, tl) %>%
     summarise(avg_n=mean(n)) %>%
     ungroup %>%
+    mutate(species=ifelse(tl=="C", species-S, species)) %>%
     mutate(species=as.factor(species),
            tl=ifelse(tl=="R", "resource species", "consumer species")) %>%
     ggplot + ## create plot
@@ -285,6 +283,8 @@ plot_timeseries <- function(dat) {
     coord_flip() +
     scale_x_reverse(name="habitat patch number", expand=c(0.02, 0.02)) +
     scale_y_continuous(name="density", labels=abbreviate) +
+    scale_colour_manual(values=color_pal(S)) +
+    scale_fill_manual(values=color_pal(S)) +
     theme(legend.position="none")
   return(p)
 }

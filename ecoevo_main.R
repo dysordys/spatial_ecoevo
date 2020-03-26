@@ -19,10 +19,10 @@ if (length(clargs)>0) { ## command-line arguments
   replicate <- as.numeric(clargs[5]) ## for seeding random number generator
   outfile <- clargs[6] ## name of file to save data in (w/ path & extension)
 } else { ## sample input parameters, if no command line arguments are given
-  S <- 50 ## ten species per trophic level
+  S <- 50 ## fifty species per trophic level
   vbar <- 1e-1 ## average genetic variance = 0.1 celsius squared
   dbar <- 1e-5 ## average dispersal = 1e-5 (100 meters per year)
-  model <- "baseline" ## baseline model
+  model <- "baseline" ## baseline model (one trophic level, constant comp coeffs)
   replicate <- 1 ## replicate number = 1
   outfile <- "" ## no output file; make plot instead
 }
