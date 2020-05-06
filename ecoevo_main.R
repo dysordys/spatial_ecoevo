@@ -1,4 +1,4 @@
-## To run, enter at the command prompt ($):
+## To run, either execute within R or enter at the command prompt ($):
 ## $ Rscript ecoevo.R [vbar] [dbar] [model] [replicate] [outfile]
 
 require(deSolve) ## for solving ordinary differential equations (ODEs)
@@ -7,7 +7,7 @@ require(tidyverse) ## for manipulating and visualizing data
 source("./plotting_functions.R") ## various functions for plotting final data
 
 
-## ----------------------------- input parameters --------------------------------
+## ---------------------------- input parameters --------------------------------
 
 
 clargs <- commandArgs(trailingOnly=TRUE)
@@ -28,7 +28,7 @@ if (length(clargs)>0) { ## command-line arguments
 }
 
 
-## ---------------------------------functions ------------------------------------
+## --------------------------------functions ------------------------------------
 
 
 ## apply smoothed step function to an arbitrary array n: n < 0 are set to 0,
@@ -164,7 +164,7 @@ organize_data <- function(out, times, pars) {
 }
 
 
-## -------------------------------- parameters -----------------------------------
+## ------------------------------- parameters -----------------------------------
 
 
 ## number of species and number of patches
@@ -179,7 +179,7 @@ set.seed(1000*replicate+321) ## set random seed for reproducibility
 v <- runif(SR, 0.5*vbar, 1.5*vbar) ## resource genetic variances
 d <- runif(SR, 0.1*dbar, 10.0*dbar) ## resource dispersal rates
 rho <- runif(SR, 0.9, 1.1) ## resource growth-tolerance tradeoff parameter
-a <- matrix(0, S, S) ## initialize full competition matrix (resources + consumers)
+a <- matrix(0, S, S) ## initialize full competition matrix (resources+consumers)
 aP <- matrix(runif(SR*SR, 0.15*0.5, 0.15*1.5), SR, SR) ## resource comp coeffs
 diag(aP) <- runif(SR, 0.2*0.5, 0.2*1.5) ## resource intraspecific comp coeffs
 a[1:SR,1:SR] <- aP ## top left block: resources
@@ -235,13 +235,13 @@ if (model %in% c("trophic", "Tdep_trophic")) {
 }
 
 ## coerce parameters into list
-params <- list(SR=SR, SC=SC, S=S, L=L, rho=rho, kappa=kappa, a=a, eta=eta,
+pars <- list(SR=SR, SC=SC, S=S, L=L, rho=rho, kappa=kappa, a=a, eta=eta,
                eps=eps, W=W, venv=venv, vmat=vmat, s=s, nmin=nmin, aw=aw, bw=bw,
                Tmax=Tmax, Tmin=Tmin, Th=Th, arate=arate, Cmax=Cmax, Cmin=Cmin,
                tE=tE, t0=t0, mig=mig, model=model)
 
 
-## ---------------------------- integrate ODEs -----------------------------------
+## --------------------------- integrate ODEs -----------------------------------
 
 
 ## Define sampling points along the time axis
@@ -249,9 +249,9 @@ tmax <- 3500 ## time units to simulate for
 stepout <- 1 ## spacing of temporal output
 time <- seq(0, tmax, by=stepout) ## define time axis
 ## Solve the system of ODEs
-dat <- ode(func=eqs, y=c(ninit,muinit), times=time, parms=params, method="rk4") %>%
+dat <- ode(func=eqs, y=c(ninit,muinit), times=time, parms=pars, method="rk4") %>%
   ## put results in organized tibble
-  organize_data(times=seq(from=t0, to=tmax, by=100), pars=params) %>%
+  organize_data(times=seq(from=t0, to=tmax, by=100), pars=pars) %>%
   ## add replicate, genetic var., dispersal rate, and model as new columns
   mutate(replicate=replicate, vbar=vbar, dbar=dbar, model=model) %>%
   ## merge average genetic variance and dispersal into a single column
@@ -262,7 +262,8 @@ dat <- ode(func=eqs, y=c(ninit,muinit), times=time, parms=params, method="rk4") 
     (patch>=round(2*max(patch)/3)) ~ "tropical", ## bottom third are "tropical"
     TRUE                           ~ "temperate")) ## the rest are "temperate"
 
-## ---------------------------- generate output -----------------------------------
+
+## --------------------------- generate output ----------------------------------
 
 
 if (outfile!="") { ## if data file to save to was not specified as empty (""):
