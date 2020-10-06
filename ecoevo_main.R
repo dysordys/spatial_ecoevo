@@ -96,9 +96,8 @@ eqs <- function(time, state, pars) {
   }
   for (k in 1:pars$L) {
     ef <- exp(-(T[k]-m[,k])^2/(2*((w[,k])^2+pars$s))) # exp. factor
-    b[,k] <- (pars$rho/w[,k])*(w[,k]/sqrt((w[,k])^2+pars$s))*ef - pars$kappa
-    g[,k] <- (pars$rho/w[,k])*(w[,k]*pars$s/(
-      ((w[,k])^2+pars$s)^(3/2)))*ef*(T[k]-m[,k])
+    b[,k] <- (pars$rho/sqrt((w[,k])^2+pars$s))*ef - pars$kappa
+    g[,k] <- (pars$rho*pars$s/(((w[,k])^2+pars$s)^(3/2)))*ef*(T[k]-m[,k])
     F <- funcresp(n[,k], pars$Th, pars$arate, pars$W)
     Fn[,k] <- rowSums(pars$eps*F) - as.vector(t(F)%*%n[,k])
   }
