@@ -1,7 +1,7 @@
 Computer code for the manuscript "The importance of species interactions in spatially explicit eco-evolutionary community dynamics under climate change".
 
 * Operating systems: CentOS 7, Ubuntu 19.10, MacOS 10.13, Windows 10
-* Software dependencies: R 3.6.3 (software has been tested on R 3.6.3 and higher)
+* Software dependencies: R (has been tested with R 3.6.3 and R 4.0.2)
 * Required R packages:
   - `deSolve`: Integrating differential equations
   - `tidyverse`: Efficient data manipulation and plotting
