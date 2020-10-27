@@ -23,7 +23,7 @@ if (length(clargs)>0) { # command-line arguments
   S <- 50 # fifty species per trophic level
   vbar <- 1e-1 # average genetic variance = 0.1 celsius squared
   dbar <- 1e-5 # average dispersal = 1e-5 (100 meters per year)
-  model <- "Tdep_trophic" # model with 2 trophic levels & T-dep. coeffs
+  model <- "Tdep_trophic" # 2 trophic levels & temperature-dependent competition
   replicate <- 1 # replicate number = 1
   outfile <- "" # no output file; make plot instead
 }
