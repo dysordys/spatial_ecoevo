@@ -3,6 +3,7 @@
 
 require(deSolve) # solving ordinary differential equations (ODEs)
 require(tidyverse) # manipulating and visualizing data
+require(ggpmisc) # adding statistics to plots
 require(Rcpp) # importing C functions
 
 sourceCpp("rhs_eval.cpp") # compile external C functions

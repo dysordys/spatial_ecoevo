@@ -1,15 +1,16 @@
 Computer code for the manuscript "The importance of species interactions in spatially explicit eco-evolutionary community dynamics under climate change".
 
-* Operating systems: CentOS 7, Ubuntu 19.10, MacOS 10.13, Windows 10
-* Software dependencies: R (has been tested with R 3.6.3 and R 4.0.2)
+* Operating systems: CentOS 7, Ubuntu 19.10, Ubuntu 20.04, MacOS 10.13, Windows 10
+* Software dependencies: R (has been tested with R 4.1.0)
 * Required R packages:
   - `deSolve`: Integrating differential equations
   - `tidyverse`: Efficient data manipulation and plotting
+  - `ggpmisc`: Adding statistical information to plots
   - `Rcpp`: Importing and compiling functions written in C/C++
 * Required non-standard hardware: none
 * Typical installation time on a normal desktop computer: no appreciable time if R is already installed. Otherwise, it is the installation time of R and the above three packages.
 
-There are two R scripts and one C++ file in this repository:
+There are two R scripts and one C++ source file in this repository:
 
 * `ecoevo_main.R`: This script runs the eco-evolutionary model. It can either be run directly from within R, or via the command prompt, by entering the following:
   `Rscript ecoevo.R [vbar] [dbar] [model] [replicate] [outfile]`

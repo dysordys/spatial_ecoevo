@@ -12,32 +12,19 @@ plot_betadiv <- function(dat, level="resource") {
   if (level=="consumer") { # if we want just consumers:
     dat <- dat %>% filter(tl=="C") # filter for consumers
   } # otherwise, consider all species together
-  # obtain local (alpha) diversity
-  alpha <- dat %>%
-    group_by(time, patch, parameterization, replicate, model) %>%
-    summarise(richness=sum(1*(n>1e-6))) %>%
-    ungroup() %>%
-    group_by(time, patch, parameterization, model) %>%
-    summarise(meanrich=mean(richness)) %>%
-    ungroup() %>%
-    group_by(time, parameterization, model) %>%
-    summarise(localrich=mean(meanrich)) %>%
-    ungroup()
-  # obtain global (gamma) diversity
-  gamma <- dat %>%
+  alpha <- dat %>% # obtain local (alpha) diversity
+    group_by(parameterization, model, time, patch, replicate) %>%
+    summarise(richness=sum(1*(n>1e-6)), .groups="drop_last") %>%
+    summarise(meanrich=mean(richness), .groups="drop_last") %>%
+    summarise(localrich=mean(meanrich), .groups="drop")
+  gamma <- dat %>% # obtain global (gamma) diversity
     mutate(presence=(n!=0)*1) %>%
-    group_by(time, species, parameterization, replicate, model) %>%
-    summarise(presence=(sum(presence)!=0)*1) %>%
-    ungroup() %>%
-    group_by(time, parameterization, replicate, model) %>%
-    summarise(rich=sum(presence)) %>%
-    ungroup() %>%
-    group_by(time, parameterization, model) %>%
-    summarise(globalrich=mean(rich)) %>%
-    ungroup()
-  # obtain beta diversity
+    group_by(time, parameterization, model, replicate, species) %>%
+    summarise(presence=(sum(presence)!=0)*1, .groups="drop_last") %>%
+    summarise(rich=sum(presence), .groups="drop_last") %>%
+    summarise(globalrich=mean(rich), .groups="drop")
   beta <- left_join(gamma, alpha, by=c("time", "model", "parameterization")) %>%
-    mutate(beta_diversity=(globalrich/localrich))
+    mutate(beta_diversity=globalrich/localrich) # obtain beta diversity
   p <- ggplot(beta) +
     geom_point(aes(x=time, y=beta_diversity),
                colour="#0072B2", shape=19, size=1, alpha=0.7) +
@@ -68,17 +55,13 @@ plot_diversity <- function(dat, level="resource") {
   } # otherwise, consider all species together
   p <- dat %>% # start data manipulation
     # for each of these variables:
-    group_by(time, patch, parameterization, replicate, model) %>%
+    group_by(time, parameterization, model, patch, replicate) %>%
     # obtain no of species such that their density is over the threshold of 1e-6
-    summarise(H=sum(1*(n>1e-6))) %>%
-    ungroup() %>%
+    summarise(H=sum(1*(n>1e-6)), .groups="drop_last") %>%
     # now average these results over replicates:
-    group_by(time, patch, parameterization, model) %>%
-    summarise(meanH=mean(H)) %>%
-    ungroup() %>%
+    summarise(meanH=mean(H), .groups="drop_last") %>%
     # and finally, obtain the mean and standard deviation across the L patches:
-    group_by(time, parameterization, model) %>%
-    summarise(mH=mean(meanH), sH=sd(meanH)) %>%
+    summarise(mH=mean(meanH), sH=sd(meanH), .groups="drop") %>%
     ggplot() + # start plotting
     # points for the mean richness at each point in time:
     geom_point(aes(x=time,y=mH), colour="#0072B2", shape=19, size=1, alpha=0.7) +
@@ -120,13 +103,11 @@ plot_jaccard <- function(dat, level="resource") {
     # for all parameters below:
     group_by(time, species, replicate, parameterization, model, region) %>%
     # get total number of persisting species:
-    summarise(pres=(sum(presence)>0)*1) %>%
-    ungroup() %>%
+    summarise(pres=(sum(presence)>0)*1, .groups="drop") %>%
     arrange(time, parameterization, model, replicate, region, species) %>%
     # create binary representation here:
     group_by(time, replicate, parameterization, model, region) %>%
-    summarise(presence=list(species[pres==1])) %>%
-    ungroup()
+    summarise(presence=list(species[pres==1]), .groups="drop")
   # create a list with the number of elements = unique(dat$time), containing
   # "presence" for each time step; used to calculate Jaccard distance below
   tabTime <- list()
@@ -149,8 +130,7 @@ plot_jaccard <- function(dat, level="resource") {
     mutate(jaccard=unlist(jacdist)) %>% # unlist distances & put them into data
     # obtain mean Jaccard distance over the variables below:
     group_by(time, parameterization, model, region) %>%
-    summarise(jaccard=mean(jaccard)) %>%
-    ungroup() %>%
+    summarise(jaccard=mean(jaccard), .groups="drop") %>%
     ggplot() + # create plot
     aes(x=time, y=jaccard, color=region, fill=region) +
     # points for the Jaccard distances in time:
@@ -186,14 +166,11 @@ plot_rac <- function(dat, level="resource", moment=2500) {
     dat <- dat %>% filter(tl=="C") # filter for consumers
   } # otherwise, consider all species together
   S <- max(dat$species)
-  p <- dat %>%
+  dat %>%
     filter(time==moment) %>%
-    group_by(species, parameterization, replicate, model) %>%
-    summarise(abundance=sum(n)) %>%
-    ungroup() %>%
-    group_by(species, parameterization, model) %>%
-    summarise(abundance=mean(abundance)) %>%
-    ungroup() %>%
+    group_by(species, parameterization, model, replicate) %>%
+    summarise(abundance=sum(n), .groups="drop_last") %>%
+    summarise(abundance=mean(abundance), .groups="drop") %>%
     mutate(species=reorder(species,abundance)) %>%
     group_by(species, abundance) %>%
     arrange(abundance) %>%
@@ -209,8 +186,8 @@ plot_rac <- function(dat, level="resource", moment=2500) {
     facet_grid(parameterization~model, scales = "free", space = 'free') +
     scale_y_continuous(name=expression(paste(log[10]," density"))) +
     scale_x_discrete(name="abundance rank", breaks=NULL) +
-    theme_bw()
-    return(p)
+    theme_bw() %>%
+    return()
 }
 
 # Plot the distribution of the fraction of patches occupied by species
@@ -230,22 +207,18 @@ plot_range <- function(dat, level="resource") {
     dat <- dat %>% filter(tl=="C") # filter for consumers
   } # otherwise, consider all species together
   L <- max(dat$patch) # number of habitat patches
-  dat <- dat %>%
+  dat %>%
     # only the selected species and three species points in time:
     # start of climate change, end of climate change, and end of simulation
     filter(time %in% c(0, 300, 2500)) %>%
     # obtain no of species such that their density is over the threshold of 1e-6
     mutate(presence=(n>1e-6)*1) %>%
     # for each of these variables:
-    group_by(time, species, parameterization, replicate, model) %>%
+    group_by(time, species, parameterization, model, replicate) %>%
     # the range breadth is the fraction (total/L) of patches they are found in:
-    summarise(breadth=sum(presence)/L) %>%
-    ungroup() %>%
+    summarise(breadth=sum(presence)/L, .groups="drop_last") %>%
     # obtain average and standard deviation over replicates
-    group_by(time, species, parameterization, model) %>%
-    summarise(mb=mean(breadth), sb=sd(breadth)) %>%
-    ungroup()
-  p <- dat %>%
+    summarise(mb=mean(breadth), sb=sd(breadth), .groups="drop") %>%
     ggplot() + # create plot
     aes(x=species,y=mb,colour=factor(time),fill=factor(time)) +
     # points for each species:
@@ -260,8 +233,8 @@ plot_range <- function(dat, level="resource") {
     scale_colour_manual(values=c("#56B4E9", "#009E73", "#E69F00"), name="time") +
     scale_fill_manual(values=c("#56B4E9", "#009E73", "#E69F00"), name="time") +
     theme_bw() +
-    theme(legend.position="bottom")
-  return(p)
+    theme(legend.position="bottom") %>%
+    return()
 }
 
 # plot regional and global species richness over time, relative to the state
@@ -281,53 +254,31 @@ plot_richness <- function(dat, level="resource") {
   tab <- dat %>%
     # presence=1 if species' density > than a threshold of 1e-6; otherwise 0:
     mutate(presence=(n>1e-6)*1) %>%
-    group_by(time, species, parameterization, replicate, model, region) %>%
+    group_by(time, parameterization, model, region, replicate, species) %>%
     # sum of presence/absence = total number of species:
-    summarise(presence=(sum(presence)!=0)*1) %>%
-    ungroup() %>%
-    group_by(time, parameterization, replicate, model, region) %>%
+    summarise(presence=(sum(presence)!=0)*1, .groups="drop_last") %>%
     # species richness = sum of presences over the regions:
-    summarise(rich=sum(presence)) %>%
-    ungroup() %>%
+    summarise(rich=sum(presence), .groups="drop_last") %>%
     # take average over replicates:
-    group_by(time, parameterization, model, region) %>%
-    summarise(rich=mean(rich)) %>%
-    ungroup()
-  # create table for global richness; calculation as above, but
-  # without grouping the data by region
+    summarise(rich=mean(rich), .groups="drop") %>%
+    # column for richness at the onset of climate change for every time point:
+    left_join(filter(., time==0) %>% select(-time) %>% rename(init_rich=rich),
+              by=c("parameterization", "model", "region")) %>%
+    # obtain % of richness change compared to richness at time = 0:
+    mutate(rich=rich/init_rich-1)
+  # create table for global richness (as above, but without grouping by region):
   tab_tot <- dat %>%
     mutate(presence=(n!=0)*1) %>%
-    group_by(time, species, parameterization, replicate, model) %>%
-    summarise(presence=(sum(presence)!=0)*1) %>%
-    ungroup() %>%
-    group_by(time, parameterization, replicate, model) %>%
-    summarise(rich=sum(presence)) %>%
-    ungroup() %>%
-    group_by(time, parameterization, model) %>%
-    summarise(rich=mean(rich)) %>%
-    ungroup() %>%
-    mutate(region="global")
-  # normalize the species richness data, comparing it with richness
-  # at the onset of climate change
-  for (scen in unique(dat$parameterization)) { # first do so regionally
-    for (struc in unique(dat$model)) {
-      for (reg in unique(dat$region)) {
-        tab$rich[(tab$parameterization==scen)&(tab$model==struc)&
-                   (tab$region==reg)] <-
-          tab$rich[(tab$parameterization==scen)&(tab$model==struc)&
-                     (tab$region==reg)] /
-          tab$rich[(tab$parameterization==scen)&(tab$model==struc)&
-                     (tab$region==reg)][1] - 1
-      }
-      tab_tot$rich[(tab_tot$parameterization==scen)& # then globally
-                     (tab_tot$model==struc)] <-
-        tab_tot$rich[(tab_tot$parameterization==scen)&
-                       (tab_tot$model==struc)] /
-        tab_tot$rich[(tab_tot$parameterization==scen)&
-                       (tab_tot$model==struc)][1] - 1
-    }
-  }
-  p <- ggplot(tab) + # create plot
+    group_by(time, parameterization, model, replicate, species) %>%
+    summarise(presence=(sum(presence)!=0)*1, .groups="drop_last") %>%
+    summarise(rich=sum(presence), .groups="drop_last") %>%
+    summarise(rich=mean(rich), .groups="drop") %>%
+    left_join(filter(., time==0) %>% select(-time) %>% rename(init_rich=rich),
+              by=c("parameterization", "model")) %>%
+    mutate(region="global") %>%
+    # obtain % of richness change compared to richness at time = 0:
+    mutate(rich=rich/init_rich-1)
+  ggplot(tab) + # create plot
     # points for regional richness through time:
     geom_point(aes(x=time, y=rich, colour=as.factor(region)),
                shape=19, size=1, alpha=0.5) +
@@ -351,8 +302,8 @@ plot_richness <- function(dat, level="resource") {
                         name="") +
     facet_grid(parameterization~model) +
     theme_bw() +
-    theme(legend.position="bottom")
-  return(p)
+    theme(legend.position="bottom") %>%
+    return()
 }
 
 # show densities across the landscape through time; works for data with
@@ -364,12 +315,11 @@ plot_richness <- function(dat, level="resource") {
 plot_timeseries <- function(dat) {
   # define color gradient from cold to warm colors:
   color_pal <- colorRampPalette(c("#56B4E9", "#009E73", "#E69F00"))
-  S <- dat %>% filter(tl=="R") %>% pull(species) %>% max # no. of resource spp.
-  p <- dat %>%
+  S <- dat %>% filter(tl=="R") %>% pull(species) %>% max() # no. of resource spp.
+  dat %>%
     # calculate mean densities at each time and patch for each species:
     group_by(time, species, patch, tl) %>%
-    summarise(avg_n=mean(n)) %>%
-    ungroup() %>%
+    summarise(avg_n=mean(n), .groups="drop") %>%
     mutate(species=ifelse(tl=="C", species-S, species)) %>%
     mutate(species=as.factor(species),
            tl=ifelse(tl=="R", "resource species", "consumer species")) %>%
@@ -384,8 +334,8 @@ plot_timeseries <- function(dat) {
     scale_colour_manual(values=color_pal(S)) +
     scale_fill_manual(values=color_pal(S)) +
     theme_bw() +
-    theme(legend.position="none")
-  return(p)
+    theme(legend.position="none") %>%
+    return()
 }
 
 # show community average trait lag against community average trait dispersion
@@ -409,7 +359,7 @@ plot_traitlag <- function(dat, level="resource") {
   Tmp <- function(x, t, tE, Cmax, Cmin, Tmax, Tmin) { # local temperatures
     return((Tmax-Tmin)*x+Tmin + ((Cmin-Cmax)*x+Cmax)*smoothstp(t/tE))
   }
-  p <- dat %>%
+  dat %>%
     # filter for times between start & end of climate change (0 <= t <= 300):
     filter(time>=0, time<=300) %>%
     # densities below 0 (due to numerical error) are set to 0:
@@ -419,26 +369,32 @@ plot_traitlag <- function(dat, level="resource") {
     # calculate temperatures at each patch and each point in time:
     mutate(temp=Tmp(seq(from=0, to=1, l=50)[patch], time,
                     300, 9.66, 1.26, 25, -10)) %>%
-    # compute relative densities over whole landscape:
-    group_by(time, replicate, parameterization, model) %>%
-    mutate(reldens=n/sum(n)) %>%
+    # compute relative densities p and weighted trait means mbar in each patch:
+    group_by(time, patch, replicate, model, parameterization) %>%
+    mutate(p=n/sum(n), mbar=sum(p*m)) %>%
+    # create nested data, with new column (data) for local community state:
+    group_by(time, patch, replicate, model, parameterization, temp, mbar) %>%
+    nest() %>%
     ungroup() %>%
-    # obtain trait lag A and trait dispersion V for each patch and time point:
-    group_by(time, patch, replicate, parameterization, model) %>%
-    summarise(A=mean(reldens*(m-temp)^2), # trait lag
-              mbar=mean(reldens*m), # weighted mean temperature optimum
-              V=mean(reldens*(m-mbar)^2)) %>% # trait dispersion
-    ungroup() %>%
-    # average them over patches and time:
-    group_by(replicate, parameterization, model) %>%
-    summarise(mA=mean(A), mV=mean(V)) %>%
-    ungroup() %>%
+    # obtain trait lag and trait dispersion for each patch and time point:
+    mutate(traitlag=map2_dbl(temp, mbar, `-`),
+           dispersion=map2_dbl(data, mbar, ~sum(.x$p*(.x$m-.y)^2)),
+           richness=map_int(data, nrow)) %>% # and also local species richness
+    # finally, average all these quantities over patches and time:
+    group_by(replicate, model, parameterization) %>%
+    summarise(traitlag=mean(traitlag), dispersion=mean(dispersion),
+              richness=mean(richness), .groups="drop") %>%
     # plot results:
     ggplot() +
-    aes(x=mV, y=mA, colour=model, shape=parameterization) +
-    geom_point(alpha=0.5) +
-    xlab("Weighted community average mean trait dispersion") +
-    ylab("Weighted community-average trait lag") +
-    theme_bw()
-  return(p)
+    aes(x=dispersion, y=traitlag, colour=parameterization) +
+    geom_point(alpha=0.2) +
+    scale_colour_manual(values=c("#0072B2","#999999","#E69F00","#CC79A7")) +
+    stat_fit_glance(method="lm", label.x="right", label.y="top",
+                    method.args=list(formula=y~x),
+                    mapping=aes(label=sprintf('R^2~"="~%.3f', stat(r.squared))),
+                    parse=TRUE) +
+    stat_smooth(geom="line", method=lm, se=FALSE, size=1, formula=y~x) +
+    facet_wrap(~model, scales="free") +
+    theme_bw() %>%
+    return()
 }
