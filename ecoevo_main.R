@@ -1,5 +1,5 @@
-# To run, either execute within R or enter at the command prompt ($):
-# $ Rscript ecoevo.R [vbar] [dbar] [model] [replicate] [outfile]
+# To run, either execute within R or enter the following at the command prompt:
+# Rscript ecoevo.R [vbar] [dbar] [model] [replicate] [outfile]
 
 require(deSolve) # solving ordinary differential equations (ODEs)
 require(tidyverse) # manipulating and visualizing data
@@ -186,7 +186,7 @@ dat <- bind_rows(before_cc, during_cc, after_cc) %>%
   # add replicate, genetic var., dispersal rate, and structure as new columns
   mutate(replicate=replicate, vbar=vbar, dbar=dbar, model=model) %>%
   # merge average genetic variance and dispersal into a single column
-  mutate(parameterization=paste("V:", vbar, " d:", dbar)) %>%
+  mutate(parameterization=paste0("V=", vbar, " d=", dbar)) %>%
   # create regions
   mutate(region=case_when(
     (patch<=round(max(patch)/3))   ~ "polar", # top third of patches are "polar"
