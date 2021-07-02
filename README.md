@@ -10,8 +10,10 @@ Computer code and data for the paper "The importance of species interactions in 
 * Required non-standard hardware: none.
 * Typical installation time on a normal desktop computer: no appreciable time if R is already installed. Otherwise, it is the installation time of R and the above three packages.
 
-There are two R scripts, one C++ source file, and one data file in this repository:
+The following files are in the repository:
 
+* This `README`.
+* `COPYING.txt`: GNU General Public License, v3.0.
 * `ecoevo_main.R`: This script runs the eco-evolutionary model. It can either be run directly from within R, or via the command prompt, by entering the following:
   `Rscript ecoevo.R [vbar] [dbar] [model] [replicate] [outfile]`
   The input parameters are:

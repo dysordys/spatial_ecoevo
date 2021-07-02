@@ -1,5 +1,11 @@
+# Copyright (C) 2021 György Barabás
+# This program comes with ABSOLUTELY NO WARRANTY. This is free software, and
+# you are welcome to redistribute it under certain conditions. for details,
+# see the GNU General Public License Agreement (in the file COPYING.txt).
+
 # To run, either execute within R or enter the following at the command prompt:
 # Rscript ecoevo.R [vbar] [dbar] [model] [replicate] [outfile]
+
 
 require(deSolve) # solving ordinary differential equations (ODEs)
 require(tidyverse) # manipulating and visualizing data
